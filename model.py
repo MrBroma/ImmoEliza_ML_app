@@ -22,8 +22,6 @@ def prepare_data(data_sales, columns):
 
 
 
-
-
 # variables
 columns_to_keep = [
         'BathroomCount', 'BedroomCount', 'LivingArea', 'SurfaceOfPlot', 'ToiletCount', 'State_Encoded',
