@@ -12,7 +12,7 @@ from sklearn.metrics import mean_absolute_error
 def load_data(columns_to_keep):
     data = pd.read_csv("data/dataset_sales_cleaned.csv")
     data_sales = data[columns_to_keep]
-    return data
+    return data_sales
 
 def prepare_data(data_sales):
     # List for ordinal encoding
@@ -101,7 +101,6 @@ columns_to_keep = [
 
 # Lauch functions
 df_sales = load_data(columns_to_keep)
-print(df_sales.head())
 data_preparation = prepare_data(df_sales)
 
 train_score, test_score, mae = train_model(df_sales, data_preparation)
@@ -109,3 +108,4 @@ train_score, test_score, mae = train_model(df_sales, data_preparation)
 print("Train Score: ", train_score)
 print("Test Score: ", test_score)
 print("Mean Absolute Error: ", mae)
+
