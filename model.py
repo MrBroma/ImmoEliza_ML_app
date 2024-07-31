@@ -6,50 +6,44 @@ from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.metrics import mean_absolute_error
 from xgboost import XGBRegressor
-import numpy as np
+from catboost import CatBoostRegressor
+from scipy.stats import uniform, randint
+import pickle
+import json
+import os
 
 def load_data(columns_to_keep):
     try:
-        # Load the dataset
         data = pd.read_csv("data/dataset_sales_cleaned.csv")
         data_sales = data[columns_to_keep]
         return data_sales
     except FileNotFoundError:
-        print("The specified file was not found.")
+        print("Le fichier spécifié est introuvable.")
         return None
 
 def prepare_data(data_sales):
-    # List for ordinal encoding
     ode_cols = ["State_Encoded", "PEB_Encoded"]
-    
-    # List for one-hot encoding
     ohe_cols = ["District", "Locality", "Province", "Region",
                 "SubtypeOfProperty", "Kitchen", "Garden",
-                "SwimmingPool", "Terrace"]
-    
-    # List of numerical columns
+                "SwimmingPool", "Terrace", "Furnished"]
     num_cols = ["BathroomCount", "BedroomCount", "ConstructionYear", "GardenArea",
                 "LivingArea", "NumberOfFacades", "RoomCount", "ShowerCount", "SurfaceOfPlot", "FloodingZone_Encoded"]
     
-    # Numerical pipeline
     num_pipeline = Pipeline(steps=[
         ('impute', KNNImputer()),
         ('scaler', StandardScaler())
     ])
     
-    # Ordinal encoding pipeline
     ode_pipeline = Pipeline(steps=[
         ('impute', SimpleImputer(strategy='most_frequent')),
         ('scaler', StandardScaler()) 
     ])
     
-    # One-hot encoding pipeline
     ohe_pipeline = Pipeline(steps=[
         ('impute', SimpleImputer(strategy='most_frequent')),
         ('ohe', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
     ])
     
-    # Column transformer for different feature types
     col_trans = ColumnTransformer(transformers=[
         ('num_p', num_pipeline, num_cols),
         ('ode_p', ode_pipeline, ode_cols),
@@ -58,101 +52,118 @@ def prepare_data(data_sales):
     
     return col_trans
 
-def train_model(data_sales, col_trans):
-    # Separate features and target variable
-    X = data_sales.drop('Price', axis=1)
-    y = data_sales['Price']
+def save_preprocessor_and_unique_values(data_sales, col_trans):
+    if not os.path.exists('models'):
+        os.makedirs('models')
     
-    # Split the data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=25)
+    X = data_sales.drop('Price', axis=1)
+    col_trans.fit(X)  # Ajuster le préprocesseur
+    
+    # Sauvegarder le ColumnTransformer
+    with open('models/preprocessor.pkl', 'wb') as file:
+        pickle.dump(col_trans, file)
+    print("Préprocesseur sauvegardé dans 'models/preprocessor.pkl'")
+    
+    # Extraire et sauvegarder les valeurs uniques pour les caractéristiques catégoriques
+    unique_values = {}
+    for column in data_sales.select_dtypes(include=['object']).columns:
+        unique_values[column] = data_sales[column].unique().tolist()
+    
+    with open('models/unique_values.json', 'w') as file:
+        json.dump(unique_values, file)
+    print("Valeurs uniques sauvegardées dans 'models/unique_values.json'")
 
-    # Define the pipeline with preprocessing and the XGBoost model
-    pipeline = Pipeline(steps=[
-        ('preprocessing', col_trans),
-        ('model', XGBRegressor(tree_method='gpu_hist', use_label_encoder=False, eval_metric='rmse'))  # Use GPU
-    ])
-
-    # Define parameter grid for randomized search
-    param_distributions = {
-        'preprocessing__num_p__impute__n_neighbors': [3, 5],  # Reduce grid size for quicker testing
-        'model__n_estimators': [50, 100],  # Reduce number of trees
-        'model__max_depth': [3, 5],  # Depth of the trees
-        'model__learning_rate': [0.1, 0.05],  # Learning rate
+def train_and_evaluate_xgboost(X_train, y_train, X_test, y_test, col_trans):
+    xgb_model = XGBRegressor(tree_method='gpu_hist', use_label_encoder=False, eval_metric='rmse')
+    
+    param_distributions_xgb = {
+        'preprocessing__num_p__impute__n_neighbors': [3, 5, 7, 9],
+        'model__n_estimators': randint(50, 200),
+        'model__max_depth': randint(3, 10),
+        'model__learning_rate': uniform(0.01, 0.3),
     }
-
-    # Use RandomizedSearchCV to find the best parameters
-    randomized_search = RandomizedSearchCV(
-        pipeline,
-        param_distributions,
-        n_iter=10,  # Number of parameter combinations to try
-        scoring='neg_mean_absolute_error',  # Use MAE as the scoring method
-        cv=3,  # Use 3-fold cross-validation
-        verbose=1,  # Increase verbosity to see the process
-        n_jobs=-1  # Use all available CPU cores
+    
+    pipeline_xgb = Pipeline(steps=[
+        ('preprocessing', col_trans),
+        ('model', xgb_model)
+    ])
+    
+    randomized_search_xgb = RandomizedSearchCV(
+        pipeline_xgb,
+        param_distributions_xgb,
+        n_iter=10,
+        scoring='neg_mean_absolute_error',
+        cv=2,
+        verbose=1,
+        n_jobs=-1
     )
+    
+    randomized_search_xgb.fit(X_train, y_train)
+    best_params_xgb = randomized_search_xgb.best_params_
+    print("Meilleurs paramètres pour XGBoost: ", best_params_xgb)
 
-    # Fit randomized search
-    randomized_search.fit(X_train, y_train)
+    # Sauvegarder le pipeline entier, y compris le préprocesseur ajusté
+    with open('models/xgb_model.pkl', 'wb') as file:
+        pickle.dump(randomized_search_xgb.best_estimator_, file)
+    print("Modèle XGBoost sauvegardé dans 'models/xgb_model.pkl'")
 
-    # Retrieve the best parameters and set them in the pipeline
-    best_params = randomized_search.best_params_
-    print("Best parameters found: ", best_params)
-
-    pipeline.set_params(
-        preprocessing__num_p__impute__n_neighbors=best_params['preprocessing__num_p__impute__n_neighbors'],
-        model__n_estimators=best_params['model__n_estimators'],
-        model__max_depth=best_params['model__max_depth'],
-        model__learning_rate=best_params['model__learning_rate'],
+def train_and_evaluate_catboost(X_train, y_train, X_test, y_test, col_trans):
+    catboost_model = CatBoostRegressor(learning_rate=0.05, depth=4, iterations=50, cat_features=[], thread_count=2, verbose=0)
+    
+    param_distributions_catboost = {
+        'model__iterations': randint(30, 60),
+        'model__depth': randint(4, 6),
+        'model__learning_rate': uniform(0.01, 0.1),
+    }
+    
+    pipeline_catboost = Pipeline(steps=[
+        ('preprocessing', col_trans),
+        ('model', catboost_model)
+    ])
+    
+    randomized_search_catboost = RandomizedSearchCV(
+        pipeline_catboost,
+        param_distributions_catboost,
+        n_iter=10,
+        scoring='neg_mean_absolute_error',
+        cv=2,
+        verbose=0,
+        n_jobs=-1
     )
+    
+    randomized_search_catboost.fit(X_train, y_train)
+    best_params_catboost = randomized_search_catboost.best_params_
+    print("Meilleurs paramètres pour CatBoost: ", best_params_catboost)
 
-    # Fit the final pipeline with the best parameters
-    pipeline.fit(X_train, y_train)
+    # Sauvegarder le pipeline entier, y compris le préprocesseur ajusté
+    with open('models/catboost_model.pkl', 'wb') as file:
+        pickle.dump(randomized_search_catboost.best_estimator_, file)
+    print("Modèle CatBoost sauvegardé dans 'models/catboost_model.pkl'")
 
-    # Predict on the test set
-    y_pred = pipeline.predict(X_test)
+def main():
+    columns_to_keep = [
+        "BathroomCount", "BedroomCount", "ConstructionYear", "District",
+        "Garden", "GardenArea", "Kitchen", "LivingArea", "Locality",
+        "NumberOfFacades", "Price", "Province", "Region", "RoomCount",
+        "ShowerCount", "SubtypeOfProperty", "SurfaceOfPlot", "SwimmingPool",
+        "Terrace", "PEB_Encoded", "State_Encoded", "FloodingZone_Encoded", "Furnished"
+    ]
+    
+    df_sales = load_data(columns_to_keep)
+    
+    if df_sales is not None:
+        col_trans = prepare_data(df_sales)
+        save_preprocessor_and_unique_values(df_sales, col_trans)  # Sauvegarder le préprocesseur et les valeurs uniques
+        
+        X = df_sales.drop('Price', axis=1)
+        y = df_sales['Price']
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=25)
+        
+        # Entraîner et évaluer le modèle XGBoost
+        train_and_evaluate_xgboost(X_train, y_train, X_test, y_test, col_trans)
 
-    # Evaluate the model
-    train_score = pipeline.score(X_train, y_train)
-    test_score = pipeline.score(X_test, y_test)
-    mae = mean_absolute_error(y_test, y_pred)
+        # Entraîner et évaluer le modèle CatBoost
+        train_and_evaluate_catboost(X_train, y_train, X_test, y_test, col_trans)
 
-    return train_score, test_score, mae
-
-# Variables
-columns_to_keep = [
-    "BathroomCount",
-    "BedroomCount",
-    "ConstructionYear",
-    "District",
-    "Garden",
-    "GardenArea",
-    "Kitchen",
-    "LivingArea",
-    "Locality",
-    "NumberOfFacades",
-    "Price",
-    "Province",
-    "Region",
-    "RoomCount",
-    "ShowerCount",
-    "SubtypeOfProperty",
-    "SurfaceOfPlot",
-    "SwimmingPool",
-    "Terrace",
-    "PEB_Encoded",
-    "State_Encoded",
-    "FloodingZone_Encoded"
-]
-
-# Load and prepare data
-df_sales = load_data(columns_to_keep)
-
-if df_sales is not None:
-    data_preparation = prepare_data(df_sales)
-
-    # Train model and evaluate performance
-    train_score, test_score, mae = train_model(df_sales, data_preparation)
-
-    print("Train Score: ", train_score)
-    print("Test Score: ", test_score)
-    print("Mean Absolute Error: ", mae)
+if __name__ == "__main__":
+    main()
