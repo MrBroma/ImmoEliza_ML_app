@@ -2,138 +2,106 @@ import streamlit as st
 import pandas as pd
 import pickle
 import json
-from sklearn.exceptions import NotFittedError
 
-# Chargement du modèle et du préprocesseur
-@st.cache_resource
-def load_model():
-    try:
-        with open('models/xgb_model.pkl', 'rb') as file:
-            model = pickle.load(file)
-        return model
-    except FileNotFoundError:
-        st.error("Le fichier du modèle n'a pas été trouvé.")
-    except pickle.UnpicklingError:
-        st.error("Erreur lors du chargement du modèle.")
-    return None
-
-@st.cache_resource
-def load_preprocessor():
-    try:
-        with open('models/preprocessor.pkl', 'rb') as file:
-            preprocessor = pickle.load(file)
-        return preprocessor
-    except FileNotFoundError:
-        st.error("Le fichier du préprocesseur n'a pas été trouvé.")
-    except pickle.UnpicklingError:
-        st.error("Erreur lors du chargement du préprocesseur.")
-    return None
-
-@st.cache_resource
-def load_unique_values():
-    try:
-        with open('models/unique_values.json', 'r') as file:
-            unique_values = json.load(file)
-        return unique_values
-    except FileNotFoundError:
-        st.error("Le fichier des valeurs uniques n'a pas été trouvé.")
-    except json.JSONDecodeError:
-        st.error("Erreur lors du chargement des valeurs uniques.")
-    return {}
-
-# Chargement des ressources
-model = load_model()
-preprocessor = load_preprocessor()
-unique_values = load_unique_values()
-
-def predict_price(features):
-    if preprocessor is None:
-        st.error("Le préprocesseur n'est pas chargé correctement.")
-        return None
-
-    # Liste des colonnes attendues par le préprocesseur
-    all_columns = [
-        "BathroomCount", "BedroomCount", "ConstructionYear", "District", "Garden",
-        "GardenArea", "Kitchen", "LivingArea", "Locality", "NumberOfFacades",
-        "PEB_Encoded", "State_Encoded", "FloodingZone_Encoded", "SurfaceOfPlot",
-        "SwimmingPool", "Terrace", "Furnished", "RoomCount", "ShowerCount", "ToiletCount",
-        "Region", "Province", "SubtypeOfProperty"
-    ]
-
-    # Créer un DataFrame avec toutes les colonnes nécessaires
-    features_df = pd.DataFrame([features], columns=all_columns).fillna(0)  # Remplir les valeurs manquantes avec 0 ou une autre valeur par défaut
-
-    try:
-        # Transformer les données d'entrée
-        processed_data = preprocessor.transform(features_df)
-        # Faire la prédiction
-        prediction = model.predict(processed_data)
-        return prediction[0]
-    except NotFittedError:
-        st.error("Le préprocesseur n'a pas été ajusté. Veuillez vérifier les fichiers sauvegardés.")
-    except Exception as e:
-        st.error(f"Erreur lors de la transformation des données : {str(e)}")
-    return None
-
-# Interface utilisateur Streamlit
-def main():
-    st.title("Prédiction du Prix Immobilier")
-    st.sidebar.header("Entrer les caractéristiques du bien")
-
-    # Créer les champs pour chaque caractéristique avec les options dynamiques
-    bathroom_count = st.sidebar.slider("Nombre de Salles de Bain", 0, 10, 1)
-    bedroom_count = st.sidebar.slider("Nombre de Chambres", 0, 10, 1)
-    construction_year = st.sidebar.number_input("Année de Construction", 1900, 2024, 2000)
+# Chargement du préprocesseur et du modèle
+@st.cache_data
+def load_preprocessor_and_model():
+    with open('models/preprocessor.pkl', 'rb') as file:
+        preprocessor = pickle.load(file)
     
-    district = st.sidebar.selectbox("District", unique_values.get("District", ["Inconnu"]))
-    garden = st.sidebar.selectbox("Jardin", unique_values.get("Garden", ["0", "1"]))
-    garden_area = st.sidebar.number_input("Superficie du Jardin (m²)", 0, 10000, 0)
-    kitchen = st.sidebar.selectbox("Cuisine", unique_values.get("Kitchen", ["NOT_INSTALLED", "SEMI_EQUIPPED", "INSTALLED", "HYPER_EQUIPPED"]))
-    living_area = st.sidebar.number_input("Surface Habitable (m²)", 0, 10000, 100)
-    locality = st.sidebar.selectbox("Localité", unique_values.get("Locality", ["Inconnu"]))
-    number_of_facades = st.sidebar.slider("Nombre de Façades", 0, 10, 1)
-    peb_encoded = st.sidebar.selectbox("PEB", unique_values.get("PEB_Encoded", ["A", "B", "C", "D", "E", "F"]))
-    state_encoded = st.sidebar.selectbox("État du Bâtiment", unique_values.get("State_Encoded", ["AS_NEW", "GOOD", "TO_BE_DONE_UP", "TO_RESTORE", "TO_RENOVATE"]))
-    flooding_zone_encoded = st.sidebar.selectbox("Zone d'Inondation", unique_values.get("FloodingZone_Encoded", ["NON_FLOOD_ZONE", "POSSIBLE_FLOOD_ZONE"]))
-    surface_of_plot = st.sidebar.number_input("Surface du Terrain (m²)", 0, 10000, 0)
-    swimming_pool = st.sidebar.selectbox("Piscine", unique_values.get("SwimmingPool", ["0", "1"]))
-    terrace = st.sidebar.selectbox("Terrasse", unique_values.get("Terrace", ["0", "1"]))
-    furnished = st.sidebar.selectbox("Meublé", unique_values.get("Furnished", ["0", "1"]))
-    room_count = st.sidebar.slider("Nombre de Pièces", 1, 20, 1)
-    shower_count = st.sidebar.slider("Nombre de Douche", 0, 10, 1)
-    toilet_count = st.sidebar.slider("Nombre de Toilettes", 0, 10, 1)
+    with open('models/xgb_model.pkl', 'rb') as file:
+        model = pickle.load(file)
+    
+    with open('models/unique_values.json', 'r') as file:
+        unique_values = json.load(file)
+    
+    return preprocessor, model, unique_values
 
-    features = {
-        "BathroomCount": bathroom_count,
-        "BedroomCount": bedroom_count,
-        "ConstructionYear": construction_year,
-        "District": district,
-        "Garden": garden,
-        "GardenArea": garden_area,
-        "Kitchen": kitchen,
-        "LivingArea": living_area,
-        "Locality": locality,
-        "NumberOfFacades": number_of_facades,
-        "PEB_Encoded": peb_encoded,
-        "State_Encoded": state_encoded,
-        "FloodingZone_Encoded": flooding_zone_encoded,
-        "SurfaceOfPlot": surface_of_plot,
-        "SwimmingPool": swimming_pool,
-        "Terrace": terrace,
-        "Furnished": furnished,
-        "RoomCount": room_count,
-        "ShowerCount": shower_count,
-        "ToiletCount": toilet_count,
-        "Region": "Inconnu",  # Valeur par défaut
-        "Province": "Inconnu",  # Valeur par défaut
-        "SubtypeOfProperty": "Inconnu"  # Valeur par défaut
+preprocessor, model, unique_values = load_preprocessor_and_model()
+
+# Titre de l'application
+st.title("Prédiction du Prix d'une Maison")
+
+# Création des entrées utilisateur
+def user_input_features():
+    BathroomCount = st.number_input('Nombre de salles de bain', min_value=0, value=1)
+    BedroomCount = st.number_input('Nombre de chambres', min_value=0, value=2)
+    ConstructionYear = st.number_input('Année de construction', min_value=1900, value=2000)
+    District = st.selectbox('District', unique_values.get('District', ['']))
+    Garden = st.selectbox('Jardin', ['Oui', 'Non'])
+    GardenArea = st.number_input('Surface du jardin (m²)', min_value=0, value=50)
+    Kitchen = st.selectbox('Cuisine', ['Installée', 'Non installée'])
+    LivingArea = st.number_input('Surface habitable (m²)', min_value=0, value=120)
+    Locality = st.selectbox('Localité', unique_values.get('Locality', ['']))
+    NumberOfFacades = st.number_input('Nombre de façades', min_value=0, value=2)
+    Province = st.selectbox('Province', unique_values.get('Province', ['']))
+    Region = st.selectbox('Région', unique_values.get('Region', ['']))
+    RoomCount = st.number_input('Nombre de pièces', min_value=0, value=5)
+    ShowerCount = st.number_input('Nombre de douches', min_value=0, value=2)
+    SubtypeOfProperty = st.selectbox('Type de propriété', ['Maison', 'Appartement', 'Autre'])
+    SurfaceOfPlot = st.number_input('Surface du terrain (m²)', min_value=0, value=300)
+    SwimmingPool = st.selectbox('Piscine', ['Oui', 'Non'])
+    Terrace = st.selectbox('Terrasse', ['Oui', 'Non'])
+    PEB_Encoded = st.selectbox('Classe PEB', ['A++', 'A+', 'B', 'C', 'D', 'E', 'F', 'G', 'Inconnu'])
+    State_Encoded = st.selectbox('État du bâtiment', ['Comme neuf', 'Rénové', 'Bon', 'À refaire', 'À rénover', 'À restaurer', 'Inconnu'])
+    FloodingZone_Encoded = st.selectbox('Zone inondable', ['Non inondable', 'Inondable'])
+    Furnished = st.selectbox('Meublé', ['Oui', 'Non'])
+    
+    data = {
+        'BathroomCount': BathroomCount,
+        'BedroomCount': BedroomCount,
+        'ConstructionYear': ConstructionYear,
+        'District': District,
+        'Garden': 1 if Garden == 'Oui' else 0,
+        'GardenArea': GardenArea,
+        'Kitchen': Kitchen,
+        'LivingArea': LivingArea,
+        'Locality': Locality,
+        'NumberOfFacades': NumberOfFacades,
+        'Province': Province,
+        'Region': Region,
+        'RoomCount': RoomCount,
+        'ShowerCount': ShowerCount,
+        'SubtypeOfProperty': SubtypeOfProperty,
+        'SurfaceOfPlot': SurfaceOfPlot,
+        'SwimmingPool': 1 if SwimmingPool == 'Oui' else 0,
+        'Terrace': 1 if Terrace == 'Oui' else 0,
+        'PEB_Encoded': PEB_Encoded,
+        'State_Encoded': State_Encoded,
+        'FloodingZone_Encoded': 1 if FloodingZone_Encoded == 'Inondable' else 0,
+        'Furnished': 1 if Furnished == 'Oui' else 0
     }
+    
+    features = pd.DataFrame(data, index=[0])
+    
+    # Assurez-vous que les colonnes catégoriques sont traitées correctement
+    features['PEB_Encoded'] = features['PEB_Encoded'].astype(str)
+    features['State_Encoded'] = features['State_Encoded'].astype(str)
+    
+    return features
 
-    if st.sidebar.button("Prédire le Prix"):
-        # Obtenir la prédiction
-        price = predict_price(features)
-        if price is not None:
-            st.write(f"**Prix prédit :** {price:,.2f} EUR")
+# Collecte des données de l'utilisateur
+user_data = user_input_features()
 
-if __name__ == "__main__":
-    main()
+# Afficher les données entrées par l'utilisateur
+st.write("Voici les caractéristiques de la maison que vous avez fournies :")
+st.write(user_data)
+
+# Prétraitement des données d'entrée
+try:
+    # Afficher les types de données avant transformation
+    st.write("Types de données avant transformation :")
+    st.write(user_data.dtypes)
+    
+    # Appliquer le prétraitement
+    X_processed = preprocessor.transform(user_data)
+    
+    # Afficher la forme et les premières lignes des données après transformation
+    st.write("Données après prétraitement :")
+    st.write(pd.DataFrame(X_processed).head())
+    
+    # Prédiction
+    prediction = model.predict(X_processed)
+    st.write(f"Le prix prédit pour cette maison est : {prediction[0]:,.2f} €")
+except Exception as e:
+    st.error(f"Erreur lors de la transformation des données : {e}")

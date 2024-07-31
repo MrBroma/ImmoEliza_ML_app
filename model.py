@@ -4,9 +4,8 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import KNNImputer, SimpleImputer
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from xgboost import XGBRegressor
-from catboost import CatBoostRegressor
 from scipy.stats import uniform, randint
 import pickle
 import json
@@ -102,43 +101,29 @@ def train_and_evaluate_xgboost(X_train, y_train, X_test, y_test, col_trans):
     best_params_xgb = randomized_search_xgb.best_params_
     print("Meilleurs paramètres pour XGBoost: ", best_params_xgb)
 
+    # Évaluer le modèle
+    best_model = randomized_search_xgb.best_estimator_
+
+    # Prédictions sur l'ensemble d'entraînement et de test
+    y_train_pred = best_model.predict(X_train)
+    y_test_pred = best_model.predict(X_test)
+
+    # Calcul des métriques
+    train_score = best_model.score(X_train, y_train)
+    test_score = best_model.score(X_test, y_test)
+    mae_train = mean_absolute_error(y_train, y_train_pred)
+    mae_test = mean_absolute_error(y_test, y_test_pred)
+    
+    print(f"Score d'entraînement : {train_score:.4f}")
+    print(f"Score de test : {test_score:.4f}")
+    print(f"MAE sur l'ensemble d'entraînement : {mae_train:.2f}")
+    print(f"MAE sur l'ensemble de test : {mae_test:.2f}")
+
     # Sauvegarder le pipeline entier, y compris le préprocesseur ajusté
     with open('models/xgb_model.pkl', 'wb') as file:
-        pickle.dump(randomized_search_xgb.best_estimator_, file)
+        pickle.dump(best_model, file)
     print("Modèle XGBoost sauvegardé dans 'models/xgb_model.pkl'")
 
-def train_and_evaluate_catboost(X_train, y_train, X_test, y_test, col_trans):
-    catboost_model = CatBoostRegressor(learning_rate=0.05, depth=4, iterations=50, cat_features=[], thread_count=2, verbose=0)
-    
-    param_distributions_catboost = {
-        'model__iterations': randint(30, 60),
-        'model__depth': randint(4, 6),
-        'model__learning_rate': uniform(0.01, 0.1),
-    }
-    
-    pipeline_catboost = Pipeline(steps=[
-        ('preprocessing', col_trans),
-        ('model', catboost_model)
-    ])
-    
-    randomized_search_catboost = RandomizedSearchCV(
-        pipeline_catboost,
-        param_distributions_catboost,
-        n_iter=10,
-        scoring='neg_mean_absolute_error',
-        cv=2,
-        verbose=0,
-        n_jobs=-1
-    )
-    
-    randomized_search_catboost.fit(X_train, y_train)
-    best_params_catboost = randomized_search_catboost.best_params_
-    print("Meilleurs paramètres pour CatBoost: ", best_params_catboost)
-
-    # Sauvegarder le pipeline entier, y compris le préprocesseur ajusté
-    with open('models/catboost_model.pkl', 'wb') as file:
-        pickle.dump(randomized_search_catboost.best_estimator_, file)
-    print("Modèle CatBoost sauvegardé dans 'models/catboost_model.pkl'")
 
 def main():
     columns_to_keep = [
@@ -162,8 +147,6 @@ def main():
         # Entraîner et évaluer le modèle XGBoost
         train_and_evaluate_xgboost(X_train, y_train, X_test, y_test, col_trans)
 
-        # Entraîner et évaluer le modèle CatBoost
-        train_and_evaluate_catboost(X_train, y_train, X_test, y_test, col_trans)
-
+        
 if __name__ == "__main__":
     main()
