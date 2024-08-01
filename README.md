@@ -2,7 +2,8 @@
 
 Welcome to the **House Price Prediction App**, a user-friendly Streamlit application that predicts house prices based on various features. With an intuitive interface and an AI-powered backend, this app makes it easy to estimate property prices for better decision-making in real estate investments.
 
-<img src="https://tenor.com/fr/view/newhome-gif-21409564" alt="Newhome GIF" width="500" />
+![Texte alternatif](assets/home-alone.gif)
+
 
 ## 🌟 Features
 
@@ -22,7 +23,7 @@ Ensure you have Python 3.7 or later installed on your machine. You will also nee
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/yourusername/immoeliza_ml_app.git
+   git clone https://github.com/MrBroma/ImmoEliza_ML_app.git
    cd immoeliza_ml_app
    ```
 
