@@ -1,107 +1,95 @@
 import streamlit as st
 import pandas as pd
 import pickle
-import json
 
-# Chargement du préprocesseur et du modèle
-@st.cache_data
-def load_preprocessor_and_model():
-    with open('models/preprocessor.pkl', 'rb') as file:
-        preprocessor = pickle.load(file)
-    
-    with open('models/xgb_model.pkl', 'rb') as file:
-        model = pickle.load(file)
-    
-    with open('models/unique_values.json', 'r') as file:
-        unique_values = json.load(file)
-    
-    return preprocessor, model, unique_values
+# Load the preprocessor and model
+preprocessor = pickle.load(open("models/preprocessor.pkl", "rb"))
+model = pickle.load(open("models/random_forest.pkl", "rb"))
 
-preprocessor, model, unique_values = load_preprocessor_and_model()
+# Load the dataset to retrieve unique values for dropdowns
+df = pd.read_csv("data/dataset_sales_cleaned.csv")
 
-# Titre de l'application
-st.title("Prédiction du Prix d'une Maison")
+# Streamlit app
+def main():
+    st.set_page_config(layout="wide")
+    st.title("House Price Prediction")
 
-# Création des entrées utilisateur
-def user_input_features():
-    BathroomCount = st.number_input('Nombre de salles de bain', min_value=0, value=1)
-    BedroomCount = st.number_input('Nombre de chambres', min_value=0, value=2)
-    ConstructionYear = st.number_input('Année de construction', min_value=1900, value=2000)
-    District = st.selectbox('District', unique_values.get('District', ['']))
-    Garden = st.selectbox('Jardin', ['Oui', 'Non'])
-    GardenArea = st.number_input('Surface du jardin (m²)', min_value=0, value=50)
-    Kitchen = st.selectbox('Cuisine', ['Installée', 'Non installée'])
-    LivingArea = st.number_input('Surface habitable (m²)', min_value=0, value=120)
-    Locality = st.selectbox('Localité', unique_values.get('Locality', ['']))
-    NumberOfFacades = st.number_input('Nombre de façades', min_value=0, value=2)
-    Province = st.selectbox('Province', unique_values.get('Province', ['']))
-    Region = st.selectbox('Région', unique_values.get('Region', ['']))
-    RoomCount = st.number_input('Nombre de pièces', min_value=0, value=5)
-    ShowerCount = st.number_input('Nombre de douches', min_value=0, value=2)
-    SubtypeOfProperty = st.selectbox('Type de propriété', ['Maison', 'Appartement', 'Autre'])
-    SurfaceOfPlot = st.number_input('Surface du terrain (m²)', min_value=0, value=300)
-    SwimmingPool = st.selectbox('Piscine', ['Oui', 'Non'])
-    Terrace = st.selectbox('Terrasse', ['Oui', 'Non'])
-    PEB_Encoded = st.selectbox('Classe PEB', ['A++', 'A+', 'B', 'C', 'D', 'E', 'F', 'G', 'Inconnu'])
-    State_Encoded = st.selectbox('État du bâtiment', ['Comme neuf', 'Rénové', 'Bon', 'À refaire', 'À rénover', 'À restaurer', 'Inconnu'])
-    FloodingZone_Encoded = st.selectbox('Zone inondable', ['Non inondable', 'Inondable'])
-    Furnished = st.selectbox('Meublé', ['Oui', 'Non'])
     
-    data = {
-        'BathroomCount': BathroomCount,
-        'BedroomCount': BedroomCount,
-        'ConstructionYear': ConstructionYear,
-        'District': District,
-        'Garden': 1 if Garden == 'Oui' else 0,
-        'GardenArea': GardenArea,
-        'Kitchen': Kitchen,
-        'LivingArea': LivingArea,
-        'Locality': Locality,
-        'NumberOfFacades': NumberOfFacades,
-        'Province': Province,
-        'Region': Region,
-        'RoomCount': RoomCount,
-        'ShowerCount': ShowerCount,
-        'SubtypeOfProperty': SubtypeOfProperty,
-        'SurfaceOfPlot': SurfaceOfPlot,
-        'SwimmingPool': 1 if SwimmingPool == 'Oui' else 0,
-        'Terrace': 1 if Terrace == 'Oui' else 0,
-        'PEB_Encoded': PEB_Encoded,
-        'State_Encoded': State_Encoded,
-        'FloodingZone_Encoded': 1 if FloodingZone_Encoded == 'Inondable' else 0,
-        'Furnished': 1 if Furnished == 'Oui' else 0
-    }
-    
-    features = pd.DataFrame(data, index=[0])
-    
-    # Assurez-vous que les colonnes catégoriques sont traitées correctement
-    features['PEB_Encoded'] = features['PEB_Encoded'].astype(str)
-    features['State_Encoded'] = features['State_Encoded'].astype(str)
-    
-    return features
 
-# Collecte des données de l'utilisateur
-user_data = user_input_features()
+    st.sidebar.header("Input Features")
 
-# Afficher les données entrées par l'utilisateur
-st.write("Voici les caractéristiques de la maison que vous avez fournies :")
-st.write(user_data)
+    # Extract features
+    district_options = df['District'].unique().tolist()
+    kitchen_options = df['Kitchen'].unique().tolist()
+    locality_options = df['Locality'].unique().tolist()
+    province_options = df['Province'].unique().tolist()
+    region_options = df['Region'].unique().tolist()
+    subtype_options = df['SubtypeOfProperty'].unique().tolist()
+    peb_options = df['PEB'].unique().tolist()
+    state_options = df['StateOfBuilding'].unique().tolist()
+    flooding_zone_options = df['FloodingZone'].unique().tolist()
 
-# Prétraitement des données d'entrée
-try:
-    # Afficher les types de données avant transformation
-    st.write("Types de données avant transformation :")
-    st.write(user_data.dtypes)
-    
-    # Appliquer le prétraitement
-    X_processed = preprocessor.transform(user_data)
-    
-    # Afficher la forme et les premières lignes des données après transformation
-    st.write("Données après prétraitement :")
-    st.write(pd.DataFrame(X_processed).head())
-    
-    # Prédiction
-    prediction = model.predict(X_processed)
-    st.write(f"Le prix prédit pour cette maison est : {prediction[0]:,.2f} €")
-except Exception as e:
-    st.error(f"Erreur lors de la transformation des données : {e}")
+    # Input features
+    bedroom_count = st.sidebar.number_input("Number of Bedrooms", min_value=0, value=int(df['BedroomCount'].mean()))
+    bathroom_count = st.sidebar.number_input("Number of Bathrooms", min_value=0, value=int(df['BathroomCount'].mean()))
+    construction_year = st.sidebar.number_input(
+        "Construction Year", min_value=1900, max_value=2032, value=int(df['ConstructionYear'].median()))
+    district = st.sidebar.selectbox("District", district_options)
+    garden = st.sidebar.selectbox("Garden", ["Yes", "No"])
+    garden_area = st.sidebar.number_input("Garden Area (in m²)", min_value=0.0, value=df['GardenArea'].mean())
+    kitchen = st.sidebar.selectbox("Kitchen Type", kitchen_options)
+    living_area = st.sidebar.number_input("Living Area (in m²)", min_value=0.0, value=df['LivingArea'].mean())
+    locality = st.sidebar.selectbox("Locality", locality_options)
+    number_of_facades = st.sidebar.number_input("Number of Facades", min_value=0, value=int(df['NumberOfFacades'].mean()))
+    province = st.sidebar.selectbox("Province", province_options)
+    region = st.sidebar.selectbox("Region", region_options)
+    room_count = st.sidebar.number_input("Number of Rooms", min_value=0, value=int(df['RoomCount'].mean()))
+    shower_count = st.sidebar.number_input("Number of Showers", min_value=0, value=int(df['ShowerCount'].mean()))
+    subtype_of_property = st.sidebar.selectbox("Subtype of Property", subtype_options)
+    surface_of_plot = st.sidebar.number_input("Surface of Plot (in m²)", min_value=0.0, value=df['SurfaceOfPlot'].mean())
+    swimming_pool = st.sidebar.selectbox("Swimming Pool", ["Yes", "No"])
+    terrace = st.sidebar.selectbox("Terrace", ["Yes", "No"])
+    peb = st.sidebar.selectbox("PEB", peb_options)
+    stateofbuilding = st.sidebar.selectbox("State of Building", state_options)
+    flooding_zone = st.sidebar.selectbox("Flooding Zone", flooding_zone_options)
+    furnished = st.sidebar.selectbox("Furnished", ["Yes", "No"])
+
+    # Prepare input data
+    input_data = pd.DataFrame({
+        'BedroomCount': [bedroom_count],
+        'BathroomCount': [bathroom_count],
+        'ConstructionYear': [construction_year],
+        'District': [district],
+        'Garden': [garden],
+        'GardenArea': [garden_area],
+        'Kitchen': [kitchen],
+        'LivingArea': [living_area],
+        'Locality': [locality],
+        'NumberOfFacades': [number_of_facades],
+        'Province': [province],
+        'Region': [region],
+        'RoomCount': [room_count],
+        'ShowerCount': [shower_count],
+        'SubtypeOfProperty': [subtype_of_property],
+        'SurfaceOfPlot': [surface_of_plot],
+        'SwimmingPool': [swimming_pool],
+        'Terrace': [terrace],
+        'PEB': [peb],
+        'StateOfBuilding': [stateofbuilding],
+        'FloodingZone': [flooding_zone],
+        'Furnished': [furnished]
+    })
+
+    if st.sidebar.button("Predict Price"):
+        # Transform input data using the preprocessor
+        transformed_data = preprocessor.transform(input_data)
+        
+        # Make prediction
+        prediction = model.predict(transformed_data)[0]
+        
+        # Show results
+        st.markdown(f"<h2 class='header'>Predicted Price: {prediction:,.2f} €</h2>", unsafe_allow_html=True)
+
+if __name__ == "__main__":
+    main()
+

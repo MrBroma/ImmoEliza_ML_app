@@ -67,23 +67,23 @@ def preprocess_sales_data(data_sales):
     keep_PEB = ['A++', 'A+', 'B', 'C', 'D', 'E', 'F', 'G']
     data_sales = data_sales[data_sales['PEB'].isin(keep_PEB)]
     
-    # Encodage ordinal pour PEB
-    peb_order = ['A++', 'A+', 'B', 'C', 'D', 'E', 'F', 'G', 'Unknown']
-    ordinal_encoder_peb = OrdinalEncoder(categories=[peb_order])
-    data_sales['PEB_Encoded'] = ordinal_encoder_peb.fit_transform(data_sales[['PEB']])
+    # # Encodage ordinal pour PEB
+    # peb_order = ['A++', 'A+', 'B', 'C', 'D', 'E', 'F', 'G', 'Unknown']
+    # ordinal_encoder_peb = OrdinalEncoder(categories=[peb_order])
+    # data_sales['PEB_Encoded'] = ordinal_encoder_peb.fit_transform(data_sales[['PEB']])
 
-    # Encodage ordinal pour l'état du bâtiment
-    state_order = ['AS_NEW', 'JUST_RENOVATED', 'GOOD', 'TO_BE_DONE_UP', 'TO_RENOVATE', 'TO_RESTORE', 'Unknown']
-    ordinal_encoder_state = OrdinalEncoder(categories=[state_order])
-    data_sales['State_Encoded'] = ordinal_encoder_state.fit_transform(data_sales[['StateOfBuilding']])
+    # # Encodage ordinal pour l'état du bâtiment
+    # state_order = ['AS_NEW', 'JUST_RENOVATED', 'GOOD', 'TO_BE_DONE_UP', 'TO_RENOVATE', 'TO_RESTORE', 'Unknown']
+    # ordinal_encoder_state = OrdinalEncoder(categories=[state_order])
+    # data_sales['State_Encoded'] = ordinal_encoder_state.fit_transform(data_sales[['StateOfBuilding']])
 
-    data_sales['FloodingZone_Encoded'] = data_sales['FloodingZone'].apply(lambda zone: 0 if zone == 'NON_FLOOD_ZONE' else 1)
+    data_sales['FloodingZone'] = data_sales['FloodingZone'].apply(lambda zone: 0 if zone == 'NON_FLOOD_ZONE' else 1)
     data_sales['LivingArea'].fillna(data_sales['LivingArea'].median(), inplace=True)
     data_sales = data_sales.drop(columns=['Url', 'Country', 'TypeOfSale', 'PropertyId', 'TypeOfProperty', 'PostalCode'])
 
     data_sales[['BathroomCount', 'Fireplace', 'Furnished', 'Garden', 'NumberOfFacades']] = data_sales[['BathroomCount', 'Fireplace', 'Furnished', 'Garden', 'NumberOfFacades']].astype('int64')
     data_sales[['RoomCount', 'ShowerCount', 'SurfaceOfPlot', 'SwimmingPool', 'Terrace']] = data_sales[['RoomCount', 'ShowerCount', 'SurfaceOfPlot', 'SwimmingPool', 'Terrace']].astype('int64')
-    data_sales[['ToiletCount', 'PEB_Encoded', 'State_Encoded', 'SwimmingPool', 'LivingArea']] = data_sales[['ToiletCount', 'PEB_Encoded', 'State_Encoded', 'SwimmingPool', 'LivingArea']].astype('int64')
+    data_sales[['ToiletCount','SwimmingPool', 'LivingArea']] = data_sales[['ToiletCount', 'SwimmingPool', 'LivingArea']].astype('int64')
     data_sales['ConstructionYear'] = data_sales['ConstructionYear'].astype('int64')
     data_sales['GardenArea'] = data_sales['GardenArea'].astype('int64')
     data_sales['BedroomCount'] = data_sales['BedroomCount'].astype('int64')
