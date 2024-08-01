@@ -2,19 +2,11 @@ import streamlit as st
 import pandas as pd
 import pickle
 
-# Load the preprocessor and model
-preprocessor = pickle.load(open("models/preprocessor.pkl", "rb"))
-model = pickle.load(open("models/random_forest.pkl", "rb"))
-
-# Load the dataset to retrieve unique values for dropdowns
-df = pd.read_csv("data/dataset_sales_cleaned.csv")
 
 # Streamlit app
 def main():
     st.set_page_config(layout="wide")
     st.title("House Price Prediction")
-
-    
 
     st.sidebar.header("Input Features")
 
@@ -91,5 +83,11 @@ def main():
         st.markdown(f"<h2 class='header'>Predicted Price: {prediction:,.2f} €</h2>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
+    # Load the preprocessor and model
+    preprocessor = pickle.load(open("models/preprocessor.pkl", "rb"))
+    model = pickle.load(open("models/random_forest.pkl", "rb"))
+
+    # Load the dataset to retrieve unique values for dropdowns
+    df = pd.read_csv("data/dataset_sales_cleaned.csv")
     main()
 
