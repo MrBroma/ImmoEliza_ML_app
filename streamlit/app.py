@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import pickle
+import joblib
 
 
 # Streamlit app
@@ -84,8 +84,8 @@ def main():
 
 if __name__ == "__main__":
     # Load the preprocessor and model
-    preprocessor = pickle.load(open("models/preprocessor.pkl", "rb"))
-    model = pickle.load(open("models/random_forest.pkl", "rb"))
+    preprocessor = joblib.load("models/preprocessor_compressed.joblib")
+    model = joblib.load("models/random_forest_compressed.joblib")
 
     # Load the dataset to retrieve unique values for dropdowns
     df = pd.read_csv("data/dataset_sales_cleaned.csv")
