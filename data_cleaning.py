@@ -33,44 +33,45 @@ def split_data(data):
 
 def preprocess_sales_data(data_sales):
     data_sales.drop(['MonthlyCharges'], axis=1, inplace=True)
-    data_sales['Fireplace'].fillna(0, inplace=True)
-    data_sales['Garden'].fillna(0, inplace=True)
-    data_sales['GardenArea'].fillna(data_sales['GardenArea'].median(), inplace=True)
-    data_sales['Furnished'].fillna(0, inplace=True)
-    data_sales['SwimmingPool'].fillna(0, inplace=True)
-    data_sales['ShowerCount'].fillna(0, inplace=True)
-    data_sales['FloodingZone'].fillna('NON_FLOOD_ZONE', inplace=True)
-    data_sales['SurfaceOfPlot'].fillna(data_sales['SurfaceOfPlot'].median(), inplace=True)
-    data_sales['Kitchen'].fillna('NOT_INSTALLED', inplace=True)
-    data_sales['Terrace'].fillna(0, inplace=True)
+    
+    # fillna to 0
+    columns_to_fill = ['Fireplace', 'Garden', 'Furnished', 'SwimmingPool', 'ShowerCount', 'Terrace', 'ToiletCount']
+    data_sales[columns_to_fill] = data_sales[columns_to_fill].fillna(0)
     data_sales['NumberOfFacades'].fillna(2, inplace=True)
-    data_sales['ToiletCount'].fillna(0, inplace=True)
-    data_sales['BathroomCount'].fillna(data_sales['BathroomCount'].median(), inplace=True)
+
+    # fill na to unknown etc...
+    data_sales['FloodingZone'].fillna('NON_FLOOD_ZONE', inplace=True)
+    data_sales['Kitchen'].fillna('NOT_INSTALLED', inplace=True)
     data_sales['StateOfBuilding'].fillna('GOOD', inplace=True)
     data_sales['PEB'].fillna('Unknown', inplace=True)
+
+    data_sales['GardenArea'].fillna(data_sales['GardenArea'].median(), inplace=True)
+    data_sales['SurfaceOfPlot'].fillna(data_sales['SurfaceOfPlot'].median(), inplace=True)
     data_sales['RoomCount'].fillna(data_sales['RoomCount'].median(), inplace=True)
     data_sales['ConstructionYear'].fillna(data_sales['ConstructionYear'].median(), inplace=True)
+    data_sales['BathroomCount'].fillna(data_sales['BathroomCount'].median(), inplace=True)
 
     keep_PEB = ['A++', 'A+', 'B', 'C', 'D', 'E', 'F', 'G']
     data_sales = data_sales[data_sales['PEB'].isin(keep_PEB)]
     
+    # data modif to 0 or 1
     data_sales['FloodingZone'] = data_sales['FloodingZone'].apply(lambda zone: 0 if zone == 'NON_FLOOD_ZONE' else 1)
     data_sales['LivingArea'].fillna(data_sales['LivingArea'].median(), inplace=True)
     data_sales = data_sales.drop(columns=['Url', 'Country', 'TypeOfSale', 'PropertyId', 'TypeOfProperty', 'PostalCode'])
 
-    data_sales[['BathroomCount', 'Fireplace', 'Furnished', 'Garden', 'NumberOfFacades']] = data_sales[['BathroomCount', 'Fireplace', 'Furnished', 'Garden', 'NumberOfFacades']].astype('int64')
-    data_sales[['RoomCount', 'ShowerCount', 'SurfaceOfPlot', 'SwimmingPool', 'Terrace']] = data_sales[['RoomCount', 'ShowerCount', 'SurfaceOfPlot', 'SwimmingPool', 'Terrace']].astype('int64')
-    data_sales[['ToiletCount','SwimmingPool', 'LivingArea']] = data_sales[['ToiletCount', 'SwimmingPool', 'LivingArea']].astype('int64')
-    data_sales['ConstructionYear'] = data_sales['ConstructionYear'].astype('int64')
-    data_sales['GardenArea'] = data_sales['GardenArea'].astype('int64')
-    data_sales['BedroomCount'] = data_sales['BedroomCount'].astype('int64')
-
+    # Modify column to int
+    columns_to_int64 = [
+    'BathroomCount', 'Fireplace', 'Furnished', 'Garden', 'NumberOfFacades',
+    'RoomCount', 'ShowerCount', 'SurfaceOfPlot', 'SwimmingPool', 'Terrace',
+    'ToiletCount', 'LivingArea', 'ConstructionYear', 'GardenArea', 'BedroomCount'
+    ]
+    data_sales[columns_to_int64] = data_sales[columns_to_int64].astype('int64')
     
     data_sales['Locality'] = data_sales['Locality'].astype(str).str.upper()
-    data_sales['Province'] = data_sales['Province'].astype(str).str.upper().str.replace(' ', '_')
-    data_sales['District'] = data_sales['District'].astype(str).str.upper().str.replace(' ', '_')
-    data_sales['Region'] = data_sales['Region'].astype(str).str.upper().str.replace(' ', '_')
-    data_sales['SubtypeOfProperty'] = data_sales['SubtypeOfProperty'].astype(str).str.upper().str.replace(' ', '_')
+
+    # data to strip
+    columns_to_strip = ['Province', 'District', 'Region', 'SubtypeOfProperty']
+    data_sales[columns_to_strip] = data_sales[columns_to_strip].astype(str).str.upper().str.replace(' ', '_')
 
     return data_sales
 
