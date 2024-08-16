@@ -38,6 +38,6 @@ df_preprocessed = pd.DataFrame(X, columns=feature_names)
 print(df_preprocessed.head())
 
 # Save the preprocessor
-joblib.dump(preprocessor, "models/preprocessor_compressed.joblib", compress=3)
+joblib.dump(preprocessor, "models/preprocessor_compressed.pkl", compress=3)
 print("Preprocessor Saved!")
 

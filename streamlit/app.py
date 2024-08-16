@@ -84,8 +84,8 @@ def main():
 
 if __name__ == "__main__":
     # Load the preprocessor and model
-    preprocessor = joblib.load("models/preprocessor_compressed.joblib")
-    model = joblib.load("models/random_forest_compressed.joblib")
+    preprocessor = joblib.load("models/preprocessor_compressed.pkl")
+    model = joblib.load("models/random_forest_compressed.pkl")
 
     # Load the dataset to retrieve unique values for dropdowns
     df = pd.read_csv("data/dataset_sales_cleaned.csv")

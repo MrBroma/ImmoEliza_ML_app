@@ -18,7 +18,7 @@ def print_score(y_test, y_pred, model_name):
 """)
 
 # Load the preprocessor and data
-preprocessor = joblib.load("models/preprocessor_compressed.joblib")
+preprocessor = joblib.load("models/preprocessor_compressed.pkl")
 df = pd.read_csv("data/dataset_sales_cleaned.csv")
 
 # Separate features and target
@@ -43,7 +43,7 @@ rf_model = RandomForestRegressor(n_jobs=num_cores)  # Use all available cores
 rf_model.fit(X_train, y_train)
 y_pred_rf = rf_model.predict(X_test)
 print_score(y_test, y_pred_rf, "Random Forest")
-joblib.dump(rf_model, "models/random_forest_compressed.joblib", compress=3)
+joblib.dump(rf_model, "models/random_forest_compressed.pkl", compress=3)
 
 # Test XGBoost Regressor
 print("Testing XGBoost Regressor")
@@ -57,4 +57,4 @@ xgb_model = xgb.XGBRegressor(
 xgb_model.fit(X_train, y_train)
 y_pred_xgb = xgb_model.predict(X_test)
 print_score(y_test, y_pred_xgb, "XGBoost")
-joblib.dump(xgb_model, "models/xgboost_compressed.joblib", compress=3)
+joblib.dump(xgb_model, "models/xgboost_compressed.pkl", compress=3)
