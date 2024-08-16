@@ -45,11 +45,10 @@ def preprocess_sales_data(data_sales):
     data_sales['StateOfBuilding'].fillna('GOOD', inplace=True)
     data_sales['PEB'].fillna('Unknown', inplace=True)
 
-    data_sales['GardenArea'].fillna(data_sales['GardenArea'].median(), inplace=True)
-    data_sales['SurfaceOfPlot'].fillna(data_sales['SurfaceOfPlot'].median(), inplace=True)
-    data_sales['RoomCount'].fillna(data_sales['RoomCount'].median(), inplace=True)
-    data_sales['ConstructionYear'].fillna(data_sales['ConstructionYear'].median(), inplace=True)
-    data_sales['BathroomCount'].fillna(data_sales['BathroomCount'].median(), inplace=True)
+    # fill with median
+    # columns_to_fill_median = ['GardenArea', 'SurfaceOfPlot', 'RoomCount', 'ConstructionYear', 'BathroomCount']
+    # data_sales[columns_to_fill_median] = data_sales[columns_to_fill_median].apply(lambda x: x.fillna(x.median()))
+
 
     keep_PEB = ['A++', 'A+', 'B', 'C', 'D', 'E', 'F', 'G']
     data_sales = data_sales[data_sales['PEB'].isin(keep_PEB)]
