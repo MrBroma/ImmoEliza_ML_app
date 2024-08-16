@@ -46,7 +46,7 @@ def preprocess_sales_data(data_sales):
     data_sales['PEB'].fillna('Unknown', inplace=True)
 
     # fill with median
-    # columns_to_fill_median = ['GardenArea', 'SurfaceOfPlot', 'RoomCount', 'ConstructionYear', 'BathroomCount']
+    # columns_to_fill_median = ['GardenArea', 'SurfaceOfPlot', 'RoomCount', 'ConstructionYear', 'BathroomCount', 'LivingArea']
     # data_sales[columns_to_fill_median] = data_sales[columns_to_fill_median].apply(lambda x: x.fillna(x.median()))
 
 
@@ -55,22 +55,20 @@ def preprocess_sales_data(data_sales):
     
     # data modif to 0 or 1
     data_sales['FloodingZone'] = data_sales['FloodingZone'].apply(lambda zone: 0 if zone == 'NON_FLOOD_ZONE' else 1)
-    data_sales['LivingArea'].fillna(data_sales['LivingArea'].median(), inplace=True)
     data_sales = data_sales.drop(columns=['Url', 'Country', 'TypeOfSale', 'PropertyId', 'TypeOfProperty', 'PostalCode'])
 
     # Modify column to int
-    columns_to_int64 = [
-    'BathroomCount', 'Fireplace', 'Furnished', 'Garden', 'NumberOfFacades',
-    'RoomCount', 'ShowerCount', 'SurfaceOfPlot', 'SwimmingPool', 'Terrace',
-    'ToiletCount', 'LivingArea', 'ConstructionYear', 'GardenArea', 'BedroomCount'
-    ]
+    # GardenArea, SurfaceOfPlot, RoomCount, ConstructionYear, BathroomCount, LivingArea
+    columns_to_int64 = ['Fireplace', 'Furnished', 'Garden', 'NumberOfFacades','ShowerCount', 'SwimmingPool', 'Terrace',
+    'ToiletCount', 'BedroomCount']
+
     data_sales[columns_to_int64] = data_sales[columns_to_int64].astype('int64')
     
     data_sales['Locality'] = data_sales['Locality'].astype(str).str.upper()
 
     # data to strip
     columns_to_strip = ['Province', 'District', 'Region', 'SubtypeOfProperty']
-    data_sales[columns_to_strip] = data_sales[columns_to_strip].astype(str).str.upper().str.replace(' ', '_')
+    data_sales[columns_to_strip] = data_sales[columns_to_strip].apply(lambda x: x.astype(str).str.upper().str.replace(' ', '_'))
 
     return data_sales
 

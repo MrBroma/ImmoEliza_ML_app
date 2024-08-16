@@ -1,12 +1,12 @@
 import pandas as pd
-import pickle
+import joblib
 
 # Load the dataset
 df = pd.read_csv("data/dataset_sales_cleaned.csv")
 
 # Load the preprocessor and model
-preprocessor = pickle.load(open("data_test/preprocessor.pkl", "rb"))
-model = pickle.load(open("data_test/random_forest.pkl", "rb"))
+preprocessor = joblib.load("models/preprocessor_compressed.joblib")
+model = joblib.load("models/random_forest_compressed.joblib")
 
 # Prepare the features and target
 X = df[preprocessor.feature_names_in_]

@@ -1,6 +1,6 @@
 from sklearn.ensemble import RandomForestRegressor
 import xgboost as xgb
-import pickle
+import joblib
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score
@@ -18,7 +18,7 @@ def print_score(y_test, y_pred, model_name):
 """)
 
 # Load the preprocessor and data
-preprocessor = pickle.load(open("data_test/preprocessor.pkl", "rb"))
+preprocessor = joblib.load("models/preprocessor_compressed.joblib")
 df = pd.read_csv("data/dataset_sales_cleaned.csv")
 
 # Separate features and target
@@ -43,7 +43,7 @@ rf_model = RandomForestRegressor(n_jobs=num_cores)  # Use all available cores
 rf_model.fit(X_train, y_train)
 y_pred_rf = rf_model.predict(X_test)
 print_score(y_test, y_pred_rf, "Random Forest")
-pickle.dump(rf_model, open("data_test/random_forest.pkl", "wb"))
+joblib.dump(rf_model, "models/random_forest_compressed.joblib", compress=3)
 
 # Test XGBoost Regressor
 print("Testing XGBoost Regressor")
@@ -57,4 +57,4 @@ xgb_model = xgb.XGBRegressor(
 xgb_model.fit(X_train, y_train)
 y_pred_xgb = xgb_model.predict(X_test)
 print_score(y_test, y_pred_xgb, "XGBoost")
-pickle.dump(xgb_model, open("data_test/xgboost.pkl", "wb"))
+joblib.dump(xgb_model, "models/xgboost_compressed.joblib", compress=3)

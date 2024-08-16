@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 from sklearn.impute import SimpleImputer
-import pickle
+import joblib
 
 # Load the dataset
 df = pd.read_csv("data/dataset_sales_cleaned.csv")
@@ -38,6 +38,6 @@ df_preprocessed = pd.DataFrame(X, columns=feature_names)
 print(df_preprocessed.head())
 
 # Save the preprocessor
-pickle.dump(preprocessor, open("data_test/preprocessor.pkl", "wb"))
+joblib.dump(preprocessor, "models/preprocessor_compressed.joblib", compress=3)
 print("Preprocessor Saved!")
 
