@@ -65,7 +65,7 @@ immoeliza_ml_app/
 ```
 
 
-✨ Usage
+## ✨ Usage
 Input Features
 
 To get a prediction, input the following features in the sidebar:
@@ -97,21 +97,22 @@ Predicting House Prices
 
 Click the "Predict Price" button in the sidebar after inputting the features. The predicted price will be displayed instantly.
 
-🤖 Model Details
+## 🤖 Model Details
 
 The prediction model is a Random Forest Regressor trained using scikit-learn. It leverages a comprehensive dataset to provide accurate price predictions based on the input features.
 
-📈 Dataset
+## 📈 Dataset
 
 The dataset used for training the model is dataset_sales_cleaned.csv, which includes cleaned and processed real estate data.
 
-📚 Additional Information
+## 📚 Additional Information
 
 Version: 1.0.0
 Author: Loic Rouaud
+https://www.linkedin.com/in/loic-rouaud/
 License: MIT License
 
-👥 Contributing
+## 👥 Contributing
 
 We welcome contributions! If you'd like to contribute, please follow these steps:
 
@@ -122,6 +123,6 @@ Push to the branch (git push origin feature-branch).
 Open a Pull Request.
 
 
-⭐️ Acknowledgments
+## ⭐️ Acknowledgments
 
 We would like to thank the contributors and open-source community for their invaluable contributions.
