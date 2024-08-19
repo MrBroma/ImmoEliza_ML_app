@@ -107,10 +107,10 @@ The dataset used for training the model is dataset_sales_cleaned.csv, which incl
 
 ## 📚 Additional Information
 
-Version: 1.0.0
-Author: Loic Rouaud
-https://www.linkedin.com/in/loic-rouaud/
-License: MIT License
+Version: 1.0.0  
+Author: Loic Rouaud  
+https://www.linkedin.com/in/loic-rouaud  
+License: MIT License  
 
 ## 👥 Contributing
 
