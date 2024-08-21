@@ -65,6 +65,10 @@ immoeliza_ml_app/
 ```
 
 
+## :house: Streamlit Deployment
+This app has been deployed on Streamlit.  
+https://immoeliza-ml-app-broma.streamlit.app  
+
 ## ✨ Usage
 Input Features
 
