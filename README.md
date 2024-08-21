@@ -103,7 +103,7 @@ Click the "Predict Price" button in the sidebar after inputting the features. Th
 
 ## 🤖 Model Details
 
-The prediction model is a Random Forest Regressor trained using scikit-learn. It leverages a comprehensive dataset to provide accurate price predictions based on the input features.
+The prediction model used is XGBoost. It leverages a comprehensive dataset to provide accurate price predictions based on the input features.
 
 ## 📈 Dataset
 
