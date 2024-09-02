@@ -129,4 +129,4 @@ Open a Pull Request.
 
 ## ⭐️ Acknowledgments
 
-We would like to thank the contributors and open-source community for their invaluable contributions.
+I would like to thank the initiative of the project during my trainee.
